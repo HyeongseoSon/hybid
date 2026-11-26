@@ -18,16 +18,19 @@
   --sel:#ffe9a8;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
 body{
   background:#6f7b87;
   font-family:'Malgun Gothic','맑은 고딕',Dotum,돋움,sans-serif;
-  font-size:12px;color:#111;padding:8px;
+  font-size:12px;color:#111;padding:6px;
+  display:flex;flex-direction:column;overflow:hidden;
 }
 .bv{border:2px solid;border-color:#fff var(--line) var(--line) #fff}
 .bv-in{border:2px solid;border-color:var(--line) #fff #fff var(--line)}
 
-.app{max-width:none;width:100%;margin:0 auto;background:linear-gradient(180deg,#e2e6ea,#c8ced4);
-  border:2px solid;border-color:#fff #5a646e #5a646e #fff;box-shadow:3px 3px 0 rgba(0,0,0,.3)}
+.app{max-width:none;width:100%;margin:0;background:linear-gradient(180deg,#e2e6ea,#c8ced4);
+  border:2px solid;border-color:#fff #5a646e #5a646e #fff;box-shadow:2px 2px 0 rgba(0,0,0,.3);
+  flex:1;display:flex;flex-direction:column;min-height:0}
 .titlebar{height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 6px;
   background:linear-gradient(180deg,var(--navy2),var(--navy));color:#fff;font-weight:bold;font-size:12px}
 .titlebar small{font-weight:normal;opacity:.75;font-size:11px}
@@ -43,8 +46,14 @@ body{
 .navbtn.on{background:linear-gradient(180deg,#f2f5f8,#d9dfe5);color:var(--navy);
   border-color:#fff var(--line) transparent #fff}
 
-.screen{display:none;padding:8px}
+.screen{display:none;padding:7px;flex:1;min-height:0;overflow:auto}
 .screen.on{display:block}
+.screen#s-list,.screen#s-detail{overflow:hidden}
+.screen#s-list.on,.screen#s-detail.on{display:flex;flex-direction:column}
+#s-list .tw{flex:1;min-height:0}
+#s-detail .split{flex:1;min-height:0}
+#s-detail .l,#s-detail .r{display:flex;flex-direction:column;min-height:0}
+#s-detail .tw,#s-detail #dpane{flex:1;min-height:0;height:auto !important}
 
 .ptitle{background:linear-gradient(180deg,#3b5a7d,#24405f);color:#fff;font-weight:bold;
   padding:4px 8px;font-size:11.5px;display:flex;justify-content:space-between;align-items:center;
@@ -151,6 +160,25 @@ h4.sc{font-size:11.5px;color:var(--navy);margin:8px 0 4px;padding-bottom:2px;bor
 .hist .b{width:100%;background:linear-gradient(180deg,#5b84bd,#24405f)}
 .hist .cp{font-size:9px;margin-top:2px;color:#3c4c5c;font-weight:bold}
 .hist .cn{font-size:10px;font-weight:bold;font-family:Consolas,monospace}
+/* ===== 협업(검토 스레드) ===== */
+.thread{background:#fff;border:2px solid;border-color:var(--line) #fff #fff var(--line);
+  padding:5px;max-height:190px;overflow:auto;margin-top:4px}
+.msg{padding:4px 6px;margin-bottom:4px;border-left:3px solid #9aa9b8;background:#f4f7fa}
+.msg.me{border-left-color:#2c4f80;background:#eef3f9}
+.msg.them{border-left-color:#1b7a43;background:#f0f8f3}
+.msg .w{font-weight:bold;font-size:11px;color:#24405f}
+.msg .tm{font-size:10px;color:#7b848d;margin-left:5px}
+.msg .mm{font-size:11.5px;line-height:1.5;white-space:pre-wrap;margin-top:2px}
+.st{display:inline-block;padding:0 6px;font-size:10.5px;font-weight:bold;border:1px solid;background:#fff;line-height:16px}
+.st0{color:#6b747d;border-color:#aab2ba}
+.st1{color:#8a6d00;border-color:#8a6d00}
+.st2{color:#1b7a43;border-color:#1b7a43}
+.st3{color:#b03030;border-color:#b03030}
+.st4{color:#2c4f80;border-color:#2c4f80}
+.mine{background:#fff8e1 !important}
+textarea.f{padding:4px 6px;font-size:12px;background:#fff;font-family:inherit;width:100%;resize:vertical;
+  border:2px solid;border-color:var(--line) #fff #fff var(--line)}
+.g2b{background:#1b7a43;color:#fff;padding:0 4px;font-size:10px;font-weight:bold;border:1px solid #14532f}
 code{background:#eceff2;padding:1px 4px;font-family:Consolas,monospace;font-size:11px}
 </style>
 </head>
@@ -208,6 +236,13 @@ code{background:#eceff2;padding:1px 4px;font-family:Consolas,monospace;font-size
         value="정보통신,통신,배선,구내,네트워크,광케이블,CCTV,영상감시,관제,주차관제,방송,전관,출입통제,유지보수,홈네트워크">
     </div>
     <div class="row">
+      <label class="lb" style="width:96px">내 이름</label>
+      <input class="f" id="myName" style="width:120px" placeholder="손형서">
+      <label class="lb">직책</label>
+      <select class="f" id="myRole"><option>담당자</option><option>실장</option><option>대표</option></select>
+      <span class="note" style="padding:0">※ 검토 코멘트 작성자로 표시됩니다.</span>
+    </div>
+    <div class="row">
       <button class="btn" id="btnFetch">▶ 실시간 수집 및 적격판정 실행</button>
       <button class="btn g" id="btnDemo">데모 데이터로 실행 (인증키 없이)</button>
       <button class="btn g" id="btnCsv">CSV 내보내기</button>
@@ -240,7 +275,8 @@ code{background:#eceff2;padding:1px 4px;font-family:Consolas,monospace;font-size
       <input class="f" id="srch" style="flex:1;min-width:150px" placeholder="공고명 검색">
       <button class="btn g" id="btnFil">적용</button>
       <span class="sb" id="starCnt">관심 0건</span>
-      <button class="btn" id="btnStarCsv">★ 관심공고 CSV</button>
+      <button class="btn g" id="btnStarCsv">★ 관심공고 CSV</button>
+      <button class="btn" id="btnShare">▶ 선택 공고 검토요청 링크 생성</button>
     </div>
   </div>
   <div class="ptitle"><span>▣ 수집 공고 목록</span><span class="r" id="listMeta">-</span></div>
@@ -248,11 +284,11 @@ code{background:#eceff2;padding:1px 4px;font-family:Consolas,monospace;font-size
     <table class="g">
       <thead><tr>
         <th style="width:30px"></th><th style="width:34px">관심</th><th style="width:36px">No</th><th style="width:40px">구분</th>
-        <th>공고명</th><th style="width:150px">공고기관</th>
+        <th>공고명</th><th style="width:62px">검토</th><th style="width:150px">공고기관</th>
         <th style="width:108px">추정가격</th><th style="width:62px">하한율</th><th style="width:88px">지역</th>
         <th style="width:96px">투찰마감</th><th style="width:46px">D-day</th><th style="width:70px">판정</th>
       </tr></thead>
-      <tbody id="tbody"><tr><td colspan="12" style="padding:20px;text-align:center;color:#6b747d">
+      <tbody id="tbody"><tr><td colspan="13" style="padding:20px;text-align:center;color:#6b747d">
         ① 설정·수집 탭에서 수집을 실행하세요.</td></tr></tbody>
     </table>
   </div>
@@ -479,6 +515,141 @@ function dday(s){
   return Math.ceil((d - new Date())/86400000);
 }
 
+
+/* ===================================================================
+   팀 검토 / 협업 — 서버 없이 URL 링크로 비동기 공유
+   =================================================================== */
+const STATUS = ['미검토','검토요청','진행','보류','반려'];
+const G2B_KW = [
+  {k:/통합배선반|배선반|MDF|광단자함|FDF/i, n:'통합배선반'},
+  {k:/보안용\s*카메라|CCTV|방범카메라/i,     n:'보안용카메라'},
+  {k:/영상감시|영상정보처리|VMS|관제시스템/i, n:'영상감시장치'}
+];
+function myName(){ return ($('#myName')&&$('#myName').value.trim()) || '담당자'; }
+function myRole(){ return ($('#myRole')&&$('#myRole').value) || '담당자'; }
+function nowStr(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function addComment(b, msg, who, tm){
+  b._cm = b._cm || [];
+  b._cm.push({ w: who || `${myName()}(${myRole()})`, m: msg, t: tm || nowStr() });
+}
+/* 직접생산증명 보유 품목 매칭 — 한영 G2B 등록품목 기준 경쟁우위 표시 */
+function g2bMatch(b){
+  const nm = (b.bidNtceNm||'');
+  return G2B_KW.filter(x=>x.k.test(nm)).map(x=>x.n);
+}
+
+/* ---------- 검토 상태 로컬 저장 (공고번호 기준) ---------- */
+function saveLocal(){
+  try{
+    const m={};
+    RAW.forEach(b=>{
+      if(b._st || (b._cm&&b._cm.length) || b._star)
+        m[b.bidNtceNo+'-'+(b.bidNtceOrd||'000')] = {s:b._st||0, c:b._cm||[], k:!!b._star};
+    });
+    localStorage.setItem('hybid_review', JSON.stringify(m));
+  }catch(e){}
+}
+function loadLocal(){
+  try{
+    const m = JSON.parse(localStorage.getItem('hybid_review')||'{}');
+    let n=0;
+    RAW.forEach(b=>{
+      const v = m[b.bidNtceNo+'-'+(b.bidNtceOrd||'000')];
+      if(v){ b._st=v.s; b._cm=v.c||[]; b._star=!!v.k; n++; }
+    });
+    if(n) log(`저장된 검토이력 ${n}건을 불러왔습니다.`);
+  }catch(e){}
+}
+
+/* ---------- 공유 링크 (압축 → URL 해시) ---------- */
+function packShare(list){
+  const pay = {
+    v:1, f:`${myName()}(${myRole()})`, d:nowStr(),
+    i:list.map(b=>({
+      n:b.bidNtceNo, o:b.bidNtceOrd||'000',
+      t:(b.bidNtceNm||'').slice(0,60),
+      g:b._j.grade, a:b._j.amt||0,
+      r:b._rgn||'', m:b.mainCnsttyNm||'',
+      e:b.bidClseDt||'', l:b._j.lwlt||'',
+      s:b._st||0, c:b._cm||[]
+    }))
+  };
+  return btoa(unescape(encodeURIComponent(JSON.stringify(pay))))
+         .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function unpackShare(h){
+  try{
+    const b64 = h.replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(escape(atob(b64))));
+  }catch(e){ return null; }
+}
+function makeShareLink(){
+  const sel = RAW.filter(b=>b._star);
+  if(!sel.length){ alert('먼저 ② 공고목록에서 공유할 공고를 [관심] 체크해 주세요.'); return; }
+  if(sel.length>25 && !confirm(`${sel.length}건은 링크가 길어 일부 메신저에서 잘릴 수 있습니다. 계속할까요?`)) return;
+  sel.forEach(b=>{ if(!b._st) b._st=1; });          // 검토요청 상태로
+  const url = location.origin + location.pathname + '#rv=' + packShare(sel);
+  const txt =
+`[HY-BID 입찰 검토요청] ${myName()}(${myRole()}) · ${nowStr()}
+선별 ${sel.length}건 검토 부탁드립니다.
+${sel.slice(0,5).map((b,i)=>`${i+1}. [${GRADE_LABEL[b._j.grade][0]}] ${(b.bidNtceNm||'').slice(0,30)} / ${won(b._j.amt)}원`).join('\n')}${sel.length>5?`\n… 외 ${sel.length-5}건`:''}
+
+아래 링크를 열면 판정근거와 함께 보실 수 있고, 의견을 남겨 회신 링크를 만들어 주시면 됩니다.
+${url}`;
+  navigator.clipboard ? navigator.clipboard.writeText(txt).then(()=>{
+    alert(`검토요청 ${sel.length}건이 클립보드에 복사되었습니다.\n카카오톡·메일에 그대로 붙여넣어 실장님께 보내세요.`);
+  }) : prompt('아래 내용을 복사해 전달하세요', txt);
+  renderList(); saveLocal();
+  log(`검토요청 링크 생성 — ${sel.length}건 (${url.length}자)`);
+}
+
+function makeReplyLink(){
+  if(!RAW.length){ alert('회신할 공고가 없습니다.'); return; }
+  const url = location.origin + location.pathname + '#rv=' + packShare(RAW);
+  const done = RAW.filter(b=>(b._cm||[]).some(m=>m.w.startsWith(myName()))).length;
+  const txt =
+`[HY-BID 검토회신] ${myName()}(${myRole()}) · ${nowStr()}
+검토 ${RAW.length}건 중 ${done}건에 의견을 남겼습니다.
+${RAW.slice(0,6).map((b,i)=>`${i+1}. [${STATUS[b._st||0]}] ${(b.bidNtceNm||'').slice(0,28)}`).join('\n')}${RAW.length>6?`\n… 외 ${RAW.length-6}건`:''}
+
+${url}`;
+  navigator.clipboard ? navigator.clipboard.writeText(txt).then(()=>{
+    alert('회신 내용이 클립보드에 복사되었습니다.\n담당자에게 그대로 전달하세요.');
+  }) : prompt('아래 내용을 복사해 전달하세요', txt);
+  log(`회신 링크 생성 — ${RAW.length}건`);
+}
+
+/* ---------- 받은 검토요청 열기 ---------- */
+function openShared(){
+  const h = location.hash;
+  if(!h.startsWith('#rv=')) return false;
+  const d = unpackShare(h.slice(4));
+  if(!d || !d.i){ log('공유 링크를 해석하지 못했습니다.','e'); return false; }
+  RAW = d.i.map(x=>({
+    bidNtceNo:x.n, bidNtceOrd:x.o, bidNtceNm:x.t,
+    presmptPrce:x.a, _rgn:x.r, mainCnsttyNm:x.m,
+    bidClseDt:x.e, sucsfbidLwltRate:x.l,
+    _st:x.s, _cm:x.c||[], _star:true, _biz:'공유',
+    _rgnChecked:!!x.r, _shared:true,
+    ntceInsttNm:'(공유 수신)', _lwltRaw:x.l
+  }));
+  RAW.forEach(b=>b._j=judge(b));
+  log(`▶ ${d.f} 님의 검토요청 ${RAW.length}건을 수신했습니다. (${d.d})`,'w');
+  log('각 공고를 선택해 의견을 남기신 뒤, [회신 링크 생성]으로 회신해 주세요.','w');
+  $('#sbApi').textContent = '공유 수신';
+  $('#sbCnt').textContent = `공유 ${RAW.length}건`;
+  applyFilter(); renderStat();
+  $$('.navbtn').forEach(n=>n.classList.remove('on'));
+  $('.navbtn[data-s="detail"]').classList.add('on');
+  $$('.screen').forEach(x=>x.classList.remove('on'));
+  $('#s-detail').classList.add('on');
+  if(VIEW.length) select(0);
+  return true;
+}
+
 /* ---------- 적격판정 엔진 ----------
    나라장터 BidPublicInfoService02 실제 응답 필드 기준
    presmptPrce(추정가격) bdgtAmt(배정예산) mainCnsttyNm(주공종명)
@@ -499,31 +670,39 @@ function judge(b){
   const rgnTxt   = (b._rgn||'').trim();
   const siteRgn  = (b.cnstrtsiteRgnNm||'').trim();
   const rgnBss   = (b.rgnLmtBidLocplcJdgmBssNm||'').trim();
-  // rgnLmtBidLocplcJdgmBssNm(지역제한 본사소재지 판단기준)이 비어 있으면 지역제한 없는 공고
+  /* 지역제한은 참가가능지역 API(getBidPblancListInfoPrtcptPsblRgn02)가 유일한 판단 근거.
+     ※ rgnLmtBidLocplcJdgmBssNm 이 비어 있어도 지역제한이 걸린 공고가 존재하므로
+        조회하지 않은 건은 절대 '참가 가능'으로 단정하지 않는다. */
   let rgnOk;
-  if(rgnTxt){                                   // 보강조회 수신 — 확정 판정
+  if(rgnTxt){                                   // API 응답 있음 — 지역제한 존재
     if(/전국|제한없음/.test(rgnTxt)){ rgnOk='ok'; c.push(['지역제한','ok','참가가능지역 전국 — 참가 가능']); }
-    else if(rgnTxt.includes(myRgn)){ rgnOk='ok'; c.push(['지역제한','ok',`참가가능지역에 '${myRgn}' 포함 (${esc(rgnTxt)})`]); }
-    else { rgnOk='no'; c.push(['지역제한','no',`참가가능지역 '${esc(rgnTxt)}' — 본사(${myRgn}) 미해당`]); }
-  } else if(!rgnBss){                           // 지역제한 자체가 없는 공고
-    rgnOk='ok'; c.push(['지역제한','ok','지역제한 없음 — 전국 참가 가능']);
-  } else if(siteRgn.includes(myRgn)){           // 지역제한 있고 현장이 본사 소재지
-    rgnOk='ok'; c.push(['지역제한','ok',`지역제한 공고 / 현장 ${esc(siteRgn)} — 본사 소재지와 일치`]);
-  } else {                                      // 지역제한 있고 현장이 타 지역
+    else if(rgnTxt.includes(myRgn)){ rgnOk='ok'; c.push(['지역제한','ok',`참가가능지역 '${esc(rgnTxt)}' — 본사(${myRgn}) 해당, 참가 가능`]); }
+    else { rgnOk='no'; c.push(['지역제한','no',`참가가능지역 '${esc(rgnTxt)}' — 본사(${myRgn}) 미해당, 참가 불가`]); }
+  } else if(b._rgnChecked){                     // 조회했고 응답 0건 — 지역제한 없음 확인됨
+    rgnOk='ok'; c.push(['지역제한','ok','참가가능지역 조회 결과 없음 — 지역제한 없는 공고(전국)']);
+  } else {                                      // 미조회 — 단정 금지
     rgnOk='wa'; c.push(['지역제한','wa',
-      `지역제한 공고 (현장 ${esc(siteRgn||'미상')} / 기준 ${esc(rgnBss)}) — 참가 불가 가능성 높음, 공고문 확인`]);
+      `참가가능지역 미조회${siteRgn?` (현장 ${esc(siteRgn)})`:''} — 공고문에서 지역제한 직접 확인 필요`]);
   }
 
-  /* ② 업종 — 주공종명(mainCnsttyNm)이 실제 제한업종 */
+  /* ② 업종 — 공사는 주공종명(mainCnsttyNm), 물품·용역은 업종제한여부로 판단
+        ※ mainCnsttyNm 은 공사 공고 전용 필드라 물품·용역엔 존재하지 않음 */
   const indTxt = (b._lic||b.mainCnsttyNm||'').trim();
   const nm = b.bidNtceNm||'';
   const indLmt = (b.indstrytyLmtYn||'').trim();
+  const isCnst = b._bizCd === 'Cnstwk';
   let indOk;
-  if(indTxt && indTxt.includes(indKey)){ indOk='ok'; c.push(['업종·면허','ok',`주공종 '${esc(indTxt)}' — 보유업종 일치`]); }
-  else if(indTxt){ indOk='no'; c.push(['업종·면허','no',`주공종 '${esc(indTxt)}' — 보유업종(${myInd}) 불일치`]); }
+  if(indTxt && indTxt.includes(indKey)){
+    indOk='ok'; c.push(['업종·면허','ok',`제한업종 '${esc(indTxt)}' — 보유업종 일치`]); }
+  else if(indTxt){
+    indOk='no'; c.push(['업종·면허','no',`제한업종 '${esc(indTxt)}' — 보유업종(${myInd}) 불일치`]); }
+  else if(!isCnst && indLmt === 'N'){
+    indOk='ok'; c.push(['업종·면허','ok','업종제한 없음 — 참가자격 제한 없는 물품·용역']); }
+  else if(!isCnst && !indLmt){
+    indOk='ok'; c.push(['업종·면허','ok','업종제한 미설정 — 참가 가능 (공고문 확인 권장)']); }
   else if(/정보통신|통신|배선|구내|네트워크|광케이블|CCTV|영상감시|관제|방송|출입통제|홈네트워크/.test(nm)){
-    indOk='wa'; c.push(['업종·면허','wa',`주공종 미표기${indLmt==='Y'?' (업종제한 있음)':''} — 공고명 기준 관련 업역 추정, 확인 필요`]); }
-  else { indOk='wa'; c.push(['업종·면허','wa','주공종 미표기 — 공고문 확인 필요']); }
+    indOk='wa'; c.push(['업종·면허','wa','업종제한 있음 / 제한업종 미수신 — 공고명 기준 관련 업역 추정, 확인 필요']); }
+  else { indOk='wa'; c.push(['업종·면허','wa','제한업종 정보 미수신 — 공고문 확인 필요']); }
 
   /* ③ 시공능력액 + 공동수급 가능 여부 */
   const jv = (b.cmmnSpldmdMethdNm||'').trim();
@@ -652,27 +831,57 @@ async function fetchAll(){
       log(`키워드 선별: ${before}건 → ${RAW.length}건 (제외 ${before-RAW.length}건)`);
     }
 
-    // 참가가능지역 보강 — 지역제한이 걸린 공고만 (판정이 뒤집히는 건만 호출)
+    /* 참가가능지역 전수 조회
+       ※ 공고 목록 응답만으로는 지역제한 유무를 알 수 없다(필드가 비어도 제한이 있음).
+          따라서 마감 경과분을 제외한 모든 후보를 실제로 조회한다. */
     const target = RAW.filter(b=>{
-      if(!(b.rgnLmtBidLocplcJdgmBssNm||'').trim()) return false;   // 지역제한 없음 → 불필요
       const dd = dday(b.bidClseDt||b.opengDt);
-      return dd===null || dd>=0;                                   // 마감 경과 제외
-    }).slice(0,30);
+      return dd===null || dd>=0;
+    }).slice(0,120);
 
     if(target.length){
-      log(`지역제한 공고 ${target.length}건 — 참가가능지역 보강 조회…`);
-      let okc=0;
-      for(const b of target){
+      log(`참가가능지역 전수 조회 ${target.length}건… (지역제한 확인)`);
+      let lmt=0, free=0;
+      for(let k=0;k<target.length;k++){
+        const b = target[k];
         try{
           const r = await callApi(OP_RGN, { pageNo:1, numOfRows:20, inqryDiv:2,
             bidNtceNo:b.bidNtceNo, bidNtceOrd:b.bidNtceOrd||'000' });
           const ri = items(r);
-          if(ri.length){ b._rgn = ri.map(x=>x.prtcptPsblRgnNm).filter(Boolean).join(', '); okc++; }
+          b._rgnChecked = true;                         // 조회 완료 표시
+          if(ri.length){ b._rgn = ri.map(x=>x.prtcptPsblRgnNm).filter(Boolean).join(', '); lmt++; }
+          else free++;
+        }catch(e){ b._rgnChecked = false; }
+        if((k+1)%20===0) log(`  … ${k+1}/${target.length} 조회`);
+      }
+      const miss = target.filter(b=>!b._rgnChecked).length;
+      log(`지역 조회 완료 — 지역제한 ${lmt}건 / 제한없음 ${free}건${miss?` / 조회실패 ${miss}건`:''}`);
+    }
+
+    // 면허제한 보강 — 업종제한(Y)인데 제한업종이 안 넘어온 공고만
+    const licT = RAW.filter(b=>{
+      if(b.mainCnsttyNm) return false;                       // 이미 주공종 있음
+      if((b.indstrytyLmtYn||'').trim()!=='Y') return false;  // 업종제한 없음
+      const dd = dday(b.bidClseDt||b.opengDt);
+      return dd===null || dd>=0;
+    }).slice(0,30);
+
+    if(licT.length){
+      log(`업종제한 공고 ${licT.length}건 — 제한업종 보강 조회…`);
+      let lc=0;
+      for(const b of licT){
+        try{
+          const l = await callApi(OP_LIC, { pageNo:1, numOfRows:20, inqryDiv:2,
+            bidNtceNo:b.bidNtceNo, bidNtceOrd:b.bidNtceOrd||'000' });
+          const li = items(l);
+          if(li.length){
+            b._lic = li.map(x=>x.lcnsLmtNm||x.permsnIndstrytyList||x.indstrytyNm)
+                       .filter(Boolean).join(', ');
+            if(b._lic) lc++;
+          }
         }catch(e){}
       }
-      log(`보강 완료 — 참가가능지역 ${okc}/${target.length}건 수신`);
-    } else {
-      log('지역제한 공고 없음 — 보강조회 생략');
+      log(`보강 완료 — 제한업종 ${lc}/${licT.length}건 수신`);
     }
     finish();
   }catch(e){
@@ -683,6 +892,8 @@ async function fetchAll(){
 }
 
 function finish(){
+  RAW.forEach(b => b._j = judge(b));
+  loadLocal();
   RAW.forEach(b => b._j = judge(b));
   $('#sbApi').textContent = 'API 연결됨';
   $('#sbCnt').textContent = `수집 ${RAW.length}건`;
@@ -731,7 +942,8 @@ function renderList(){
       <td style="text-align:center"><input type="checkbox" class="star" data-i="${i}" ${b._star?'checked':''}></td>
       <td class="num">${i+1}</td>
       <td>${esc(b._biz||'')}</td>
-      <td class="nm">${esc(b.bidNtceNm||'')}</td>
+      <td class="nm">${esc(b.bidNtceNm||'')}${(()=>{const g=g2bMatch(b);return g.length?` <span class="g2b">직접생산 ${esc(g[0])}</span>`:'';})()}</td>
+      <td><span class="st st${b._st||0}">${STATUS[b._st||0]}</span></td>
       <td>${esc((b.ntceInsttNm||'').slice(0,22))}</td>
       <td class="num">${won(j.amt)}</td>
       <td class="num">${j.lwlt?j.lwlt+'%':'—'}</td>
@@ -808,6 +1020,7 @@ function select(i){
     <div class="drow"><span class="dk">추정가격</span><span class="dv b">${won(j.amt)} 원</span></div>
     <div class="drow"><span class="dk">배정예산</span><span class="dv b">${won(b.bdgtAmt)} 원</span></div>
     <div class="drow"><span class="dk">주공종</span><span class="dv">${esc(b.mainCnsttyNm||b._lic||'(미표기)')}</span></div>
+    ${(()=>{const g=g2bMatch(b);return g.length?`<div class="drow"><span class="dk">보유품목</span><span class="dv"><span class="g2b">직접생산증명 보유</span> ${esc(g.join(', '))} — 물품 직접생산 가능, 가격경쟁력 우위</span></div>`:'';})()}
     <div class="drow"><span class="dk">현장지역</span><span class="dv">${esc(b.cnstrtsiteRgnNm||'—')}${b.rgnLmtBidLocplcJdgmBssNm?' / 판단기준: '+esc(b.rgnLmtBidLocplcJdgmBssNm):''}</span></div>
     <div class="drow"><span class="dk">참가지역</span><span class="dv">${esc(b._rgn||'(보강조회 미수신)')}</span></div>
     <div class="drow"><span class="dk">공동수급</span><span class="dv">${esc(b.cmmnSpldmdMethdNm||'—')}</span></div>
@@ -829,9 +1042,52 @@ function select(i){
       <button class="btn g" onclick="navigator.clipboard&&navigator.clipboard.writeText('${(b.bidNtceNo||'')}')">공고번호 복사</button>
       <button class="btn g" id="btnStar">${b._star?'★ 관심 해제':'☆ 관심 등록'}</button>
     </div>
+
+    <div class="ptitle" style="margin-top:8px"><span>▣ 팀 검토</span>
+      <span class="r">검토상태 ${STATUS[b._st||0]}</span></div>
+    <div class="box">
+      <div class="row" style="margin:0 0 5px">
+        <label class="lb">상태</label>
+        <select class="f" id="selSt">
+          ${STATUS.map((t,k)=>`<option value="${k}" ${(b._st||0)==k?'selected':''}>${t}</option>`).join('')}
+        </select>
+        <span class="note" style="padding:0">담당자가 상태를 바꾸고 의견을 남기면 아래 스레드에 기록됩니다.</span>
+      </div>
+      <div class="thread" id="thread">
+        ${(b._cm&&b._cm.length)
+          ? b._cm.map(m=>`<div class="msg ${m.w===myName()?'me':'them'}">
+              <span class="w">${esc(m.w)}</span><span class="tm">${esc(m.t)}</span>
+              <div class="mm">${esc(m.m)}</div></div>`).join('')
+          : '<div class="note" style="padding:6px">아직 검토 의견이 없습니다.</div>'}
+      </div>
+      <div style="margin-top:5px">
+        <textarea class="f" id="cmIn" rows="2" placeholder="예) 이 건 지역제한 인천이라 우리 참가 불가합니다. 확인 부탁드립니다."></textarea>
+      </div>
+      <div class="row" style="margin:5px 0 0">
+        <button class="btn" id="btnCm">의견 등록</button>
+        <button class="btn g" id="btnCmClear">스레드 비우기</button>
+        ${b._shared?'<button class="btn" id="btnReply">↩ 회신 링크 생성</button>':''}
+      </div>
+    </div>
     <div class="note">※ 본 판정은 참가자격 1차 스크리닝입니다. 투찰 전 공고문의 적격심사 세부기준을 반드시 확인하십시오.</div>`;
   const sb = $('#btnStar');
   if(sb) sb.onclick = ()=>{ b._star=!b._star; select(i); renderList(); updateStarCount(); };
+  const ss = $('#selSt');
+  if(ss) ss.onchange = ()=>{
+    const old = b._st||0; b._st = +ss.value;
+    addComment(b, `[상태 변경] ${STATUS[old]} → ${STATUS[b._st]}`);
+    select(i); renderList(); saveLocal();
+  };
+  const bc = $('#btnCm');
+  if(bc) bc.onclick = ()=>{
+    const v = $('#cmIn').value.trim();
+    if(!v) return;
+    addComment(b, v); select(i); saveLocal();
+  };
+  const bx = $('#btnCmClear');
+  if(bx) bx.onclick = ()=>{ if(confirm('이 공고의 검토 스레드를 비울까요?')){ b._cm=[]; select(i); saveLocal(); } };
+  const br = $('#btnReply');
+  if(br) br.onclick = makeReplyLink;
 }
 
 /* ---------- 통계 ---------- */
@@ -871,7 +1127,7 @@ function exportCsv(starOnly){
   const src = starOnly ? RAW.filter(b=>b._star) : VIEW;
   if(!src.length){ alert(starOnly?'관심 등록된 공고가 없습니다.':'내보낼 데이터가 없습니다.'); return; }
   const head = ['판정','업무구분','공고번호','공고명','공고기관','수요기관','추정가격','배정예산',
-    '낙찰하한율','하한금액','주공종','현장지역','참가가능지역','공동수급','낙찰방법','투찰마감','D-day','공동수급지분','판정근거','공고URL'];
+    '낙찰하한율','하한금액','주공종','현장지역','참가가능지역','공동수급','낙찰방법','투찰마감','D-day','공동수급지분','검토상태','검토의견','판정근거','공고URL'];
   const rows = src.map(b=>{
     const j=b._j;
     const lo = (j.lwlt&&j.amt)?Math.round(j.amt*j.lwlt/100):'';
@@ -881,6 +1137,8 @@ function exportCsv(starOnly){
       b.cmmnSpldmdMethdNm||'', b.sucsfbidMthdNm||'',
       fmtDt(b.bidClseDt||b.opengDt), j.dd==null?'':j.dd,
       j.share?j.share+'% 이하':'',
+      STATUS[b._st||0],
+      (b._cm||[]).map(m=>`${m.w} ${m.t}: ${m.m}`).join(' | '),
       j.checks.map(c=>`${c[0]}:${c[2]}`).join(' / '),
       b.bidNtceDtlUrl||''
     ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
@@ -950,6 +1208,7 @@ $('#btnFetch').onclick = fetchAll;
 $('#btnDemo').onclick  = runDemo;
 $('#btnCsv').onclick   = ()=>exportCsv(false);
 $('#btnStarCsv').onclick = ()=>exportCsv(true);
+$('#btnShare').onclick = makeShareLink;
 $('#btnFil').onclick   = applyFilter;
 $('#srch').onkeydown   = e=>{ if(e.key==='Enter') applyFilter(); };
 $('#btnRejudge').onclick = ()=>{ if(RAW.length){ RAW.forEach(b=>b._j=judge(b)); applyFilter(); renderStat(); log('판정 파라미터 변경 — 재판정 완료'); } };
@@ -963,6 +1222,13 @@ $('#btnSaveKey').onclick = ()=>{
   const t=new Date(), f=new Date(Date.now()-6*86400000);
   $('#dtTo').value=ymd(t); $('#dtFrom').value=ymd(f);
   try{ const k=localStorage.getItem('hybid_key'); if(k){ $('#apikey').value=k; log('저장된 인증키를 불러왔습니다.'); } }catch(e){}
+  try{
+    const n=localStorage.getItem('hybid_name'); if(n) $('#myName').value=n;
+    const r=localStorage.getItem('hybid_role'); if(r) $('#myRole').value=r;
+  }catch(e){}
+  $('#myName').onchange=()=>{ try{localStorage.setItem('hybid_name',$('#myName').value)}catch(e){} };
+  $('#myRole').onchange=()=>{ try{localStorage.setItem('hybid_role',$('#myRole').value)}catch(e){} };
+  if(openShared()) return;
   log('HY-BID 초기화 완료. 인증키 입력 후 [실시간 수집]을 실행하거나, [데모 데이터로 실행]으로 먼저 동작을 확인하세요.');
   log(`회사 기준값 — 시평액 ${won(CO.sipyung)} / 3년실적 ${won(CO.rec3)} / 소재지 ${CO.region} / 업종 ${CO.industry}`);
 })();

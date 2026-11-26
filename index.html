@@ -25,6 +25,13 @@ body{
   font-size:12px;color:#111;padding:6px;
   display:flex;flex-direction:column;overflow:hidden;
 }
+.tgl{cursor:pointer;user-select:none;margin-left:8px;padding:0 6px;background:#4a6b90;
+  border:1px solid #16283f;font-weight:bold;font-size:11px;color:#fff}
+.tgl:hover{background:#5c82ab}
+.split .l.fold{width:34px;min-width:34px;flex:0 0 34px;overflow:hidden}
+.split .l.fold .tw,.split .l.fold .r{display:none}
+.split .r.fold{flex:0 0 36px;min-width:36px;overflow:hidden}
+.split .r.fold .box,.split .r.fold .r{display:none}
 .bv{border:2px solid;border-color:#fff var(--line) var(--line) #fff}
 .bv-in{border:2px solid;border-color:var(--line) #fff #fff var(--line)}
 
@@ -58,7 +65,7 @@ body{
 .ptitle{background:linear-gradient(180deg,#3b5a7d,#24405f);color:#fff;font-weight:bold;
   padding:4px 8px;font-size:11.5px;display:flex;justify-content:space-between;align-items:center;
   border:1px solid var(--navy);letter-spacing:-.3px}
-.ptitle .r{font-weight:normal;opacity:.85}
+.ptitle .r{font-weight:normal;opacity:.85;margin-left:auto;padding-left:10px}
 
 .box{background:linear-gradient(180deg,#eef1f4,#dde2e7);padding:8px;
   border:2px solid;border-color:#fff var(--line) var(--line) #fff}
@@ -220,7 +227,10 @@ code{background:#eceff2;padding:1px 4px;font-family:Consolas,monospace;font-size
     <div class="row">
       <label class="lb" style="width:96px">조회기간</label>
       <input class="f" type="date" id="dtFrom"><span>~</span><input class="f" type="date" id="dtTo">
-      <span class="note" style="padding:0">※ 2026.11.10 정책변경으로 <b>최대 7일</b>까지 조회 가능</span>
+      <span class="chip" data-days="7">최근 7일</span>
+      <span class="chip" data-days="14">14일</span>
+      <span class="chip" data-days="30">30일</span>
+      <span class="note" style="padding:0">※ 조달청 API는 <b>1회 7일</b>까지만 조회됩니다. 7일 초과 시 <b>자동 분할 호출</b>합니다.</span>
     </div>
     <div class="row">
       <label class="lb" style="width:96px">업무구분</label>
@@ -231,7 +241,7 @@ code{background:#eceff2;padding:1px 4px;font-family:Consolas,monospace;font-size
       <select class="f" id="rows"><option>100</option><option selected>200</option><option>300</option></select>
     </div>
     <div class="row">
-      <label class="lb" style="width:96px">키워드필터</label>
+      <label class="lb" style="width:96px" id="kwLb">키워드필터</label>
       <input class="f" id="kw" style="flex:1;min-width:300px"
         value="정보통신,통신,배선,구내,네트워크,광케이블,CCTV,영상감시,관제,주차관제,방송,전관,출입통제,유지보수,홈네트워크">
     </div>
@@ -299,11 +309,15 @@ code{background:#eceff2;padding:1px 4px;font-family:Consolas,monospace;font-size
 <div class="screen" id="s-detail">
   <div class="split">
     <div class="l">
-      <div class="ptitle"><span>▣ 공고 선택</span><span class="r" id="dcount">0</span></div>
+      <div class="ptitle"><span>▣ 공고 선택</span>
+        <span class="r" id="dcount">0</span>
+        <span class="tgl" id="tglL" title="목록 접기/펼치기">◀</span></div>
       <div class="tw" style="height:520px"><table class="g"><tbody id="dlist"></tbody></table></div>
     </div>
     <div class="r">
-      <div class="ptitle"><span>▣ 적격심사 판정 결과</span><span class="r" id="dno">-</span></div>
+      <div class="ptitle"><span>▣ 적격심사 판정 결과</span>
+        <span class="r" id="dno">-</span>
+        <span class="tgl" id="tglR" title="판정 패널 접기/펼치기">▶</span></div>
       <div class="box" id="dpane" style="height:520px;overflow:auto">
         <div style="padding:30px;text-align:center;color:#6b747d">좌측에서 공고를 선택하세요.</div>
       </div>
@@ -417,7 +431,10 @@ code{background:#eceff2;padding:1px 4px;font-family:Consolas,monospace;font-size
     </div>
     <h4 class="sc">3. 사용법 및 활용 시나리오</h4>
     <div class="note">
-      ① <b>설정·수집</b>에서 인증키 입력 → 조회기간(최대 7일)·업무구분 선택 → [실시간 수집 및 적격판정 실행]<br>
+      ① <b>설정·수집</b>에서 인증키 입력 → 조회기간·업무구분·수집모드 선택 → [실시간 수집 및 적격판정 실행]<br>
+      &nbsp;&nbsp;· <b>정밀모드</b>: 공사·용역은 <code>indstrytyNm=정보통신공사업</code>, 물품은 자사 보유 품목코드
+      <code>dtilPrdctClsfcNo</code> 3종으로 API에 조건을 지정해 조회 (실측 10,867건 → 533건, 95% 절감)<br>
+      &nbsp;&nbsp;· 조회기간이 7일을 넘으면 조달청 제한에 맞춰 7일 단위로 자동 분할 호출<br>
       ② <b>공고목록</b>에서 판정결과(적격/조건부/부적격)·지역·금액으로 필터링<br>
       ③ 행 클릭 → <b>적격판정</b> 탭에서 5개 항목별 판정 근거 확인 → 나라장터 원문 공고 열람<br>
       ④ <b>통계</b>에서 금액구간·기관별 분포 확인 후 담당자 분담<br>
@@ -475,7 +492,11 @@ const CO = {
   sipyung: 15011600000,   // 시공능력액
   rec3   : 23255371000,   // 3년실적
   rec5   : 35232497000,   // 5년실적
-  g2b    : ['4322281805','4617161002','4617162201']
+  g2b    : [
+    {c:'4322281805', n:'통합배선반'},
+    {c:'4617161002', n:'보안용카메라'},
+    {c:'4617162201', n:'영상감시장치'}
+  ]
 };
 
 let WORKING_ROUTE = null;  // 성공한 호출경로 기억
@@ -796,40 +817,142 @@ function items(body){
 }
 
 /* ---------- 수집 ---------- */
+/* 조달청 API는 1회 조회기간이 7일로 제한되므로 기간을 7일 단위로 분할 */
+function dateChunks(fromStr, toStr, span){
+  const out=[], e=new Date(toStr);
+  let s=new Date(fromStr);
+  while(s<=e){
+    let t=new Date(s); t.setDate(t.getDate()+span-1);
+    if(t>e) t=new Date(e);
+    out.push([new Date(s), new Date(t)]);
+    s=new Date(t); s.setDate(s.getDate()+1);
+  }
+  return out;
+}
+const stampD = (d,end)=>{
+  const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}${end?'2359':'0000'}`;
+};
+
 async function fetchAll(){
   const btn = $('#btnFetch'); btn.disabled = true;
   $('#lgState').textContent = '수집중…';
-  RAW = [];
+  RAW = []; VIEW = []; SELECTED = null;
+  $('#dpane').innerHTML = '<div style="padding:30px;text-align:center;color:#6b747d">수집 중…</div>';
   try{
-    const f = $('#dtFrom').value.replace(/-/g,'')+'0000';
-    const t = $('#dtTo').value.replace(/-/g,'')+'2359';
     const rows = $('#rows').value;
     const bizs = $$('.chip[data-biz].on').map(e=>e.dataset.biz);
     if(!bizs.length) throw new Error('업무구분을 1개 이상 선택하세요.');
+    if(!$('#dtFrom').value || !$('#dtTo').value) throw new Error('조회기간을 입력하세요.');
 
-    const days = (new Date($('#dtTo').value) - new Date($('#dtFrom').value))/86400000;
-    if(days>7) log('조회기간이 7일을 초과했습니다. 조달청 정책상 결과가 누락될 수 있습니다.','w');
+    const chunks = dateChunks($('#dtFrom').value, $('#dtTo').value, 7);
+    const totalCalls = chunks.length * bizs.length;
+    if(chunks.length > 1){
+      log(`조회기간 ${$('#dtFrom').value} ~ ${$('#dtTo').value} → 7일 단위 ${chunks.length}구간으로 분할`,'w');
+      if(totalCalls > 30 && !confirm(
+        `조회기간이 길어 API를 ${totalCalls}회 호출합니다 (예상 ${Math.ceil(totalCalls*1.5/60)}분 소요).\n` +
+        `공공데이터포털 일일 한도는 오퍼레이션당 1,000회입니다.\n계속할까요?`)){
+        log('사용자가 조회를 취소했습니다.','w');
+        btn.disabled=false; $('#lgState').textContent='취소됨'; return;
+      }
+    } else {
+      log(`조회기간 ${$('#dtFrom').value} ~ ${$('#dtTo').value}`);
+    }
+    log(`업무구분 ${bizs.map(b=>OPS[b].label).join(', ')} / 총 ${totalCalls}회 호출 예정`);
 
-    log(`조회기간 ${$('#dtFrom').value} ~ ${$('#dtTo').value} / 업무구분 ${bizs.map(b=>OPS[b].label).join(',')}`);
-
-    for(const biz of bizs){
-      log(`${OPS[biz].label} 공고 조회 중… (${OPS[biz].srch})`);
-      const body = await callApi(OPS[biz].srch, {
-        pageNo:1, numOfRows:rows, inqryDiv:1, inqryBgnDt:f, inqryEndDt:t
-      });
-      const arr = items(body);
-      arr.forEach(x => { x._biz = OPS[biz].label; x._bizCd = biz; });
-      RAW.push(...arr);
-      log(`→ ${OPS[biz].label} ${arr.length}건 수신 (전체 ${body.totalCount ?? '?'}건)`);
+    /* 페이지 단위 전수 수집 (totalCount 기준, 최대 5페이지 = 4,995건) */
+    async function fetchPaged(op, extra, bgn, end){
+      let page=1, all=[], total=0;
+      while(page<=5){
+        const body = await callApi(op, Object.assign({
+          pageNo:page, numOfRows:999, inqryDiv:1, inqryBgnDt:bgn, inqryEndDt:end
+        }, extra||{}));
+        const arr = items(body);
+        all.push(...arr);
+        total = Number(body.totalCount||0);
+        if(!arr.length || all.length>=total) break;
+        page++;
+      }
+      return {arr, total};
     }
 
-    // 키워드 선별
+    const MODE = $('#mode').value;
+    let call=0, rawTotal=0;
+
+    if(MODE==='precise'){
+      log('수집모드: 정밀 — 업종·보유품목을 API 파라미터로 지정해 조회합니다.');
+      const IND = ($('#p_ind') && $('#p_ind').value.trim()) || '정보통신공사업';
+
+      for(const biz of bizs){
+        let got=0, tot=0;
+        for(const [cs,ce] of chunks){
+          const bgn=stampD(cs,false), end=stampD(ce,true);
+          try{
+            if(biz==='Thng'){
+              /* 물품 — 한영 직접생산증명 보유 품목코드로 각각 조회 */
+              for(const g of CO.g2b){
+                call++;
+                const r = await fetchPaged(OPS[biz].srch, {dtilPrdctClsfcNo:g.c}, bgn, end);
+                r.arr.forEach(x=>{ x._biz=OPS[biz].label; x._bizCd=biz; x._byCode=g; });
+                RAW.push(...r.arr); got+=r.arr.length; tot+=r.total;
+              }
+            } else {
+              call++;
+              const r = await fetchPaged(OPS[biz].srch, {indstrytyNm:IND}, bgn, end);
+              r.arr.forEach(x=>{ x._biz=OPS[biz].label; x._bizCd=biz; x._byInd=IND; });
+              RAW.push(...r.arr); got+=r.arr.length; tot+=r.total;
+            }
+          }catch(e){
+            log(`  ${OPS[biz].label} ${ymd(cs)}~${ymd(ce)} 조회 실패: ${e.message}`,'e');
+          }
+          if(chunks.length>1 && call%5===0) log(`  … ${call}회 호출 (누적 ${RAW.length}건)`);
+        }
+        rawTotal += tot;
+        const how = biz==='Thng' ? `보유품목 ${CO.g2b.length}종` : IND;
+        log(`→ ${OPS[biz].label} ${got}건 (${how} 지정조회 / 해당기간 대상 ${tot}건)`);
+      }
+      log(`정밀조회 완료 — API 호출 ${call}회로 ${RAW.length}건 확보 (전건 스캔 대비 호출·전송량 대폭 절감)`);
+
+    } else {
+      log('수집모드: 전체 — 전건을 받아 키워드로 필터링합니다. (호출량·누락 주의)');
+      for(const biz of bizs){
+        let got=0, tot=0;
+        for(const [cs,ce] of chunks){
+          call++;
+          try{
+            const r = await fetchPaged(OPS[biz].srch, {}, stampD(cs,false), stampD(ce,true));
+            r.arr.forEach(x=>{ x._biz=OPS[biz].label; x._bizCd=biz; });
+            RAW.push(...r.arr); got+=r.arr.length; tot+=r.total;
+            if(r.total > r.arr.length)
+              log(`  주의: ${OPS[biz].label} ${ymd(cs)}~${ymd(ce)} ${r.total}건 중 ${r.arr.length}건만 수신(5페이지 상한)`,'w');
+          }catch(e){
+            log(`  ${OPS[biz].label} ${ymd(cs)}~${ymd(ce)} 조회 실패: ${e.message}`,'e');
+          }
+          if(chunks.length>1 && call%5===0) log(`  … ${call}회 호출 (누적 ${RAW.length}건)`);
+        }
+        rawTotal += tot;
+        log(`→ ${OPS[biz].label} ${got}건 수신 (해당기간 전체 ${tot}건)`);
+      }
+    }
+
+    if(!RAW.length) throw new Error('수집된 공고가 0건입니다. 조회기간·업무구분을 확인하세요.');
+    if(trunc) log(`주의: ${trunc}개 구간에서 공고가 페이지당 ${rows}건을 초과해 일부만 수신했습니다. 기간을 좁히거나 건수/페이지를 늘리세요.`,'w');
+
+    // 키워드 선별 — 전체모드에서만 적용 (정밀모드는 이미 업종·품목으로 좁혀짐)
     const kws = $('#kw').value.split(',').map(s=>s.trim()).filter(Boolean);
     const before = RAW.length;
-    if(kws.length){
+    if(MODE==='broad' && kws.length){
       RAW = RAW.filter(b => kws.some(k => (b.bidNtceNm||'').includes(k)));
       log(`키워드 선별: ${before}건 → ${RAW.length}건 (제외 ${before-RAW.length}건)`);
+    } else if(MODE==='precise'){
+      log(`선별 생략 — API 단계에서 업종·품목이 이미 지정되어 ${RAW.length}건 전부가 대상입니다.`);
     }
+    // 중복 제거 (기간 경계·품목코드 중복 수집 방지)
+    const seen = new Set(); const dedup = [];
+    RAW.forEach(b=>{ const k=b.bidNtceNo+'-'+(b.bidNtceOrd||'000');
+      if(!seen.has(k)){ seen.add(k); dedup.push(b); } });
+    if(dedup.length !== RAW.length) log(`중복 제거: ${RAW.length}건 → ${dedup.length}건`);
+    RAW = dedup;
 
     /* 참가가능지역 전수 조회
        ※ 공고 목록 응답만으로는 지역제한 유무를 알 수 없다(필드가 비어도 제한이 있음).
@@ -886,8 +1009,12 @@ async function fetchAll(){
     finish();
   }catch(e){
     log('오류: '+e.message,'e');
-    log('→ 인증키(Decoding) 확인 / 호출경로를 프록시로 변경 / 조회기간 7일 이내로 축소해 보세요.','w');
+    log('→ 인증키(Decoding) 확인 / 호출경로 변경 / 조회기간 축소를 시도해 보세요.','w');
     $('#lgState').textContent = '오류';
+    $('#sbCnt').textContent = `수집 ${RAW.length}건`;
+    renderList(); renderDList();
+    $('#dpane').innerHTML = '<div style="padding:30px;text-align:center;color:#b03030">수집 결과가 없습니다.</div>';
+    $('#dno').textContent = '-';
   }finally{ btn.disabled = false; }
 }
 
@@ -971,6 +1098,12 @@ function updateStarCount(){
 
 function renderDList(){
   $('#dcount').textContent = VIEW.length;
+  if(!VIEW.length){
+    $('#dlist').innerHTML = '<tr><td style="padding:16px;text-align:center;color:#6b747d">공고 없음</td></tr>';
+    $('#dpane').innerHTML = '<div style="padding:30px;text-align:center;color:#6b747d">표시할 공고가 없습니다.</div>';
+    $('#dno').textContent = '-'; SELECTED = null;
+    return;
+  }
   $('#dlist').innerHTML = VIEW.map((b,i)=>{
     const gl=GRADE_LABEL[b._j.grade];
     return `<tr class="g${b._j.grade}" data-i="${i}">
@@ -1020,6 +1153,8 @@ function select(i){
     <div class="drow"><span class="dk">추정가격</span><span class="dv b">${won(j.amt)} 원</span></div>
     <div class="drow"><span class="dk">배정예산</span><span class="dv b">${won(b.bdgtAmt)} 원</span></div>
     <div class="drow"><span class="dk">주공종</span><span class="dv">${esc(b.mainCnsttyNm||b._lic||'(미표기)')}</span></div>
+    ${b._byCode?`<div class="drow"><span class="dk">조회근거</span><span class="dv"><span class="g2b">보유품목 지정조회</span> [${esc(b._byCode.c)}] ${esc(b._byCode.n)} — 직접생산증명 보유 품목</span></div>`:''}
+    ${b._byInd?`<div class="drow"><span class="dk">조회근거</span><span class="dv">업종 지정조회 — ${esc(b._byInd)}</span></div>`:''}
     ${(()=>{const g=g2bMatch(b);return g.length?`<div class="drow"><span class="dk">보유품목</span><span class="dv"><span class="g2b">직접생산증명 보유</span> ${esc(g.join(', '))} — 물품 직접생산 가능, 가격경쟁력 우위</span></div>`:'';})()}
     <div class="drow"><span class="dk">현장지역</span><span class="dv">${esc(b.cnstrtsiteRgnNm||'—')}${b.rgnLmtBidLocplcJdgmBssNm?' / 판단기준: '+esc(b.rgnLmtBidLocplcJdgmBssNm):''}</span></div>
     <div class="drow"><span class="dk">참가지역</span><span class="dv">${esc(b._rgn||'(보강조회 미수신)')}</span></div>
@@ -1209,6 +1344,39 @@ $('#btnDemo').onclick  = runDemo;
 $('#btnCsv').onclick   = ()=>exportCsv(false);
 $('#btnStarCsv').onclick = ()=>exportCsv(true);
 $('#btnShare').onclick = makeShareLink;
+
+/* 수집모드 전환 */
+$('#mode').onchange = ()=>{
+  const pr = $('#mode').value==='precise';
+  $('#kw').disabled = pr;
+  $('#kw').style.opacity = pr ? .45 : 1;
+  $('#kwLb').style.opacity = pr ? .45 : 1;
+  log(pr
+    ? '정밀모드 — 공사·용역은 업종명(정보통신공사업), 물품은 보유 품목코드 3종으로 API에 직접 조건을 걸어 조회합니다.'
+    : '전체모드 — 전건을 받아 키워드로 거릅니다. 호출량이 크고 페이지 상한으로 누락이 생길 수 있습니다.');
+};
+
+/* 기간 프리셋 */
+$$('.chip[data-days]').forEach(c=>c.onclick=()=>{
+  const n = +c.dataset.days;
+  const t = new Date(), f = new Date(Date.now()-(n-1)*86400000);
+  $('#dtTo').value = ymd(t); $('#dtFrom').value = ymd(f);
+  $$('.chip[data-days]').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on');
+  log(`조회기간을 최근 ${n}일(${ymd(f)} ~ ${ymd(t)})로 설정했습니다.` + (n>7?` — 7일 단위 ${Math.ceil(n/7)}구간 분할 호출`:''));
+});
+
+/* 좌·우 패널 접기 */
+$('#tglL').onclick = ()=>{
+  const el = document.querySelector('#s-detail .l');
+  el.classList.toggle('fold');
+  $('#tglL').textContent = el.classList.contains('fold') ? '▶' : '◀';
+};
+$('#tglR').onclick = ()=>{
+  const el = document.querySelector('#s-detail .r');
+  el.classList.toggle('fold');
+  $('#tglR').textContent = el.classList.contains('fold') ? '◀' : '▶';
+};
 $('#btnFil').onclick   = applyFilter;
 $('#srch').onkeydown   = e=>{ if(e.key==='Enter') applyFilter(); };
 $('#btnRejudge').onclick = ()=>{ if(RAW.length){ RAW.forEach(b=>b._j=judge(b)); applyFilter(); renderStat(); log('판정 파라미터 변경 — 재판정 완료'); } };
@@ -1228,6 +1396,7 @@ $('#btnSaveKey').onclick = ()=>{
   }catch(e){}
   $('#myName').onchange=()=>{ try{localStorage.setItem('hybid_name',$('#myName').value)}catch(e){} };
   $('#myRole').onchange=()=>{ try{localStorage.setItem('hybid_role',$('#myRole').value)}catch(e){} };
+  $('#kw').disabled = true; $('#kw').style.opacity=.45; $('#kwLb').style.opacity=.45;
   if(openShared()) return;
   log('HY-BID 초기화 완료. 인증키 입력 후 [실시간 수집]을 실행하거나, [데모 데이터로 실행]으로 먼저 동작을 확인하세요.');
   log(`회사 기준값 — 시평액 ${won(CO.sipyung)} / 3년실적 ${won(CO.rec3)} / 소재지 ${CO.region} / 업종 ${CO.industry}`);
